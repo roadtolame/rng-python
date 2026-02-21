@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoRNG — SHA3-256</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0a0a0f;
+    --panel:   rgba(10,10,20,0.82);
+    --green:   #00ff88;
+    --cyan:    #00e5ff;
+    --orange:  #ff6b00;
+    --red:     #ff2244;
+    --text:    #c8d8e8;
+    --dim:     #4a5a6a;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── LAVA LAMPS ─────────────────────────────────────────────── */
+  .lamps-bg {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .lamp-wrap {
+    width: 160px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    opacity: 0.85;
+  }
+
+  .lamp-body {
+    width: 90px;
+    height: 80vh;
+    background: linear-gradient(180deg, rgba(20,10,30,0.6) 0%, rgba(10,5,20,0.4) 100%);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px 12px 0 0;
+    overflow: hidden;
+    position: relative;
+    backdrop-filter: blur(2px);
+  }
+
+  /* Lava blobs */
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(8px);
+    opacity: 0.9;
+    animation: rise linear infinite;
+  }
+
+  /* Left lamp — orange/red */
+  .lamp-left .blob { background: radial-gradient(circle, #ff6b00, #ff2244); }
+  .lamp-left .blob:nth-child(1) { width:55px;height:60px; left:15px; animation-duration:7s;  animation-delay:0s; }
+  .lamp-left .blob:nth-child(2) { width:40px;height:45px; left:30px; animation-duration:9s;  animation-delay:-3s; }
+  .lamp-left .blob:nth-child(3) { width:50px;height:55px; left:8px;  animation-duration:11s; animation-delay:-5s; }
+  .lamp-left .blob:nth-child(4) { width:35px;height:40px; left:38px; animation-duration:8s;  animation-delay:-7s; }
+  .lamp-left .blob:nth-child(5) { width:60px;height:65px; left:12px; animation-duration:13s; animation-delay:-2s; }
+  .lamp-left .blob:nth-child(6) { width:30px;height:35px; left:45px; animation-duration:6s;  animation-delay:-9s; }
+
+  /* Right lamp — cyan/green */
+  .lamp-right .blob { background: radial-gradient(circle, #00e5ff, #00ff88); }
+  .lamp-right .blob:nth-child(1) { width:50px;height:55px; left:18px; animation-duration:8s;  animation-delay:-1s; }
+  .lamp-right .blob:nth-child(2) { width:42px;height:48px; left:28px; animation-duration:10s; animation-delay:-4s; }
+  .lamp-right .blob:nth-child(3) { width:58px;height:62px; left:10px; animation-duration:12s; animation-delay:-6s; }
+  .lamp-right .blob:nth-child(4) { width:33px;height:38px; left:40px; animation-duration:7s;  animation-delay:-8s; }
+  .lamp-right .blob:nth-child(5) { width:46px;height:52px; left:20px; animation-duration:9s;  animation-delay:-3s; }
+  .lamp-right .blob:nth-child(6) { width:38px;height:42px; left:32px; animation-duration:11s; animation-delay:-5s; }
+
+  @keyframes rise {
+    0%   { bottom: -80px; transform: scale(0.7) translateX(0);    border-radius: 50% 40% 60% 50%; }
+    25%  {                transform: scale(1.1) translateX(8px);   border-radius: 60% 50% 40% 60%; }
+    50%  {                transform: scale(0.9) translateX(-6px);  border-radius: 40% 60% 50% 40%; }
+    75%  {                transform: scale(1.2) translateX(10px);  border-radius: 55% 45% 65% 45%; }
+    100% { bottom: 105%;  transform: scale(0.6) translateX(-4px); border-radius: 50%; opacity: 0; }
+  }
+
+  .lamp-base {
+    width: 110px; height: 18px;
+    background: linear-gradient(90deg, #1a1a2e, #2a2a4e, #1a1a2e);
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+  }
+  .lamp-cap {
+    width: 110px; height: 14px;
+    background: linear-gradient(90deg, #1a1a2e, #2a2a4e, #1a1a2e);
+    border-radius: 8px 8px 0 0;
+    margin-bottom: -1px;
+  }
+  .lamp-label {
+    font-size: 9px; color: var(--dim); margin-top: 6px;
+    text-align: center; letter-spacing: 2px;
+  }
+
+  /* Lamp glow on floor */
+  .lamp-left  .lamp-glow { width:200px;height:8px;background:radial-gradient(ellipse,rgba(255,100,0,.4),transparent);border-radius:50%;margin-top:2px; }
+  .lamp-right .lamp-glow { width:200px;height:8px;background:radial-gradient(ellipse,rgba(0,229,255,.4),transparent);border-radius:50%;margin-top:2px; }
+
+  /* ── MAIN CONTENT ───────────────────────────────────────────── */
+  .content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 720px;
+    padding: 30px 24px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  /* Header */
+  .header { text-align: center; }
+  .header h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(22px, 5vw, 36px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, var(--orange), var(--green), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    animation: hueShift 6s linear infinite;
+  }
+  @keyframes hueShift {
+    0%,100% { filter: hue-rotate(0deg); }
+    50%      { filter: hue-rotate(30deg); }
+  }
+  .header .sub {
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 3px;
+    margin-top: 6px;
+  }
+  .cloudflare-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(249,130,30,0.12); border: 1px solid rgba(249,130,30,0.3);
+    border-radius: 20px; padding: 4px 12px; font-size: 10px;
+    color: #f9821e; letter-spacing: 2px; margin-top: 8px;
+  }
+
+  /* Panel */
+  .panel {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid rgba(0,229,255,0.15);
+    border-radius: 12px;
+    padding: 20px 24px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 40px rgba(0,229,255,0.05), inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+
+  .panel-title {
+    font-size: 10px; letter-spacing: 3px; color: var(--cyan);
+    text-transform: uppercase; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .panel-title::before { content:''; flex:1; height:1px; background:rgba(0,229,255,0.2); }
+  .panel-title::after  { content:''; flex:1; height:1px; background:rgba(0,229,255,0.2); }
+
+  /* Controls */
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .ctrl-group { display: flex; flex-direction: column; gap: 5px; }
+  .ctrl-group.full { grid-column: 1 / -1; }
+  label { font-size: 10px; letter-spacing: 2px; color: var(--dim); }
+
+  select, input[type=number] {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(0,229,255,0.2);
+    border-radius: 6px;
+    color: var(--green);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+    width: 100%;
+    transition: border-color .2s;
+  }
+  select:focus, input:focus { border-color: var(--cyan); }
+  select option { background: #0a0a1a; }
+
+  /* Toggle */
+  .toggle-row { display: flex; align-items: center; gap: 10px; }
+  .toggle-label { font-size: 11px; color: var(--dim); letter-spacing: 1px; flex: 1; }
+  .toggle {
+    position: relative; width: 44px; height: 22px; cursor: pointer;
+  }
+  .toggle input { display:none; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3);
+    border-radius: 11px; transition: background .3s;
+  }
+  .toggle input:checked + .toggle-track { background: rgba(0,255,136,0.25); border-color: var(--green); }
+  .toggle-knob {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--cyan); transition: transform .3s, background .3s;
+  }
+  .toggle input:checked ~ .toggle-knob { transform: translateX(22px); background: var(--green); }
+
+  /* Interval control */
+  .speed-row { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+  .speed-label { font-size:10px; color:var(--dim); letter-spacing:2px; white-space:nowrap; }
+  input[type=range] {
+    flex: 1; accent-color: var(--cyan); cursor: pointer;
+    height: 4px; border-radius: 2px;
+  }
+  .speed-val { font-size: 12px; color: var(--cyan); min-width: 45px; text-align:right; }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 10px; }
+  .btn {
+    flex: 1; padding: 11px; border-radius: 7px; border: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px; letter-spacing: 2px; cursor: pointer;
+    transition: all .2s; text-transform: uppercase;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, rgba(0,229,255,0.2), rgba(0,255,136,0.15));
+    border: 1px solid rgba(0,229,255,0.4); color: var(--cyan);
+  }
+  .btn-primary:hover { background: rgba(0,229,255,0.25); box-shadow: 0 0 20px rgba(0,229,255,0.3); }
+  .btn-stop {
+    background: rgba(255,34,68,0.1); border: 1px solid rgba(255,34,68,0.3); color: var(--red);
+  }
+  .btn-stop:hover { background: rgba(255,34,68,0.2); }
+  .btn:active { transform: scale(0.97); }
+
+  /* Seed display */
+  .seed-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: clamp(9px, 1.6vw, 12px);
+    color: var(--green);
+    word-break: break-all;
+    letter-spacing: 1px;
+    line-height: 1.8;
+    padding: 14px;
+    background: rgba(0,0,0,0.4);
+    border-radius: 8px;
+    border: 1px solid rgba(0,255,136,0.1);
+    min-height: 56px;
+    position: relative;
+    overflow: hidden;
+  }
+  .seed-display::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(0,255,136,0.03), transparent);
+    animation: scanline 3s linear infinite;
+  }
+  @keyframes scanline {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  .seed-char { display: inline; transition: color .1s; }
+  .seed-char.new { color: #fff; animation: flashChar .4s ease; }
+  @keyframes flashChar { 0%{color:#fff} 100%{color:var(--green)} }
+
+  /* Value + stats */
+  .value-big {
+    text-align: center;
+    font-family: 'Orbitron', sans-serif;
+    font-size: clamp(28px, 8vw, 52px);
+    font-weight: 700;
+    color: var(--cyan);
+    letter-spacing: 2px;
+    text-shadow: 0 0 30px rgba(0,229,255,0.5);
+    animation: pulse 2s ease-in-out infinite;
+    margin: 4px 0;
+  }
+  @keyframes pulse {
+    0%,100% { text-shadow: 0 0 20px rgba(0,229,255,0.4); }
+    50%      { text-shadow: 0 0 50px rgba(0,229,255,0.8), 0 0 80px rgba(0,229,255,0.3); }
+  }
+
+  .meta-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px;
+  }
+  .meta-item {
+    background: rgba(0,0,0,0.3); border-radius: 6px;
+    padding: 8px 10px; border: 1px solid rgba(255,255,255,0.04);
+  }
+  .meta-key { font-size: 9px; color: var(--dim); letter-spacing: 2px; }
+  .meta-val { font-size: 12px; color: var(--text); margin-top: 2px; }
+
+  /* History */
+  .history-list {
+    max-height: 180px; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .history-list::-webkit-scrollbar { width: 4px; }
+  .history-list::-webkit-scrollbar-thumb { background: rgba(0,229,255,0.2); border-radius: 2px; }
+
+  .hist-item {
+    display: flex; gap: 10px; align-items: center;
+    padding: 6px 10px; background: rgba(0,0,0,0.25);
+    border-radius: 5px; font-size: 10px;
+    border-left: 2px solid transparent;
+    animation: slideIn .3s ease;
+    transition: border-color .2s;
+  }
+  .hist-item:hover { border-left-color: var(--cyan); }
+  @keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:none} }
+  .hist-n    { color: var(--dim); min-width: 24px; }
+  .hist-val  { color: var(--cyan); min-width: 90px; font-family:'Orbitron',sans-serif; font-size:11px; }
+  .hist-dist { color: var(--dim); min-width: 70px; }
+  .hist-seed { color: rgba(0,255,136,0.5); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:9px; }
+
+  /* Status */
+  .status-bar {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10px; color: var(--dim); letter-spacing: 2px;
+  }
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--dim); transition: background .3s;
+  }
+  .dot.live { background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink 1s infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  .counter { color: var(--cyan); }
+
+  /* Responsive */
+  @media(max-width: 500px) {
+    .controls { grid-template-columns: 1fr; }
+    .lamp-wrap { width: 80px; }
+    .lamp-body { width: 55px; }
+    .blob { transform: scale(0.7); }
+  }
+</style>
+</head>
+<body>
+
+<!-- LAVA LAMPS BACKGROUND -->
+<div class="lamps-bg">
+  <div class="lamp-wrap lamp-left">
+    <div class="lamp-cap"></div>
+    <div class="lamp-body">
+      <div class="blob"></div><div class="blob"></div><div class="blob"></div>
+      <div class="blob"></div><div class="blob"></div><div class="blob"></div>
+    </div>
+    <div class="lamp-base"></div>
+    <div class="lamp-glow"></div>
+    <div class="lamp-label">ENTROPY<br>SOURCE A</div>
+  </div>
+
+  <div class="lamp-wrap lamp-right">
+    <div class="lamp-cap"></div>
+    <div class="lamp-body">
+      <div class="blob"></div><div class="blob"></div><div class="blob"></div>
+      <div class="blob"></div><div class="blob"></div><div class="blob"></div>
+    </div>
+    <div class="lamp-base"></div>
+    <div class="lamp-glow"></div>
+    <div class="lamp-label">ENTROPY<br>SOURCE B</div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="content">
+
+  <div class="header">
+    <h1>CRYPTO RNG</h1>
+    <div class="sub">CRYPTOGRAPHICALLY SECURE SEED GENERATOR</div>
+    <div class="cloudflare-badge">⚡ INSPIRED BY CLOUDFLARE LAVARAND</div>
+  </div>
+
+  <!-- Controls Panel -->
+  <div class="panel">
+    <div class="panel-title">ПАРАМЕТРЫ</div>
+
+    <div class="controls">
+      <div class="ctrl-group">
+        <label>РАСПРЕДЕЛЕНИЕ</label>
+        <select id="dist">
+          <option value="uniform">Равномерное</option>
+          <option value="normal">Нормальное</option>
+          <option value="exponential">Экспоненциальное</option>
+          <option value="integer">Целые числа</option>
+        </select>
+      </div>
+      <div class="ctrl-group">
+        <label>ДИАПАЗОН</label>
+        <div style="display:flex;gap:6px">
+          <input type="number" id="low"  value="0"   step="any" placeholder="MIN">
+          <input type="number" id="high" value="1"   step="any" placeholder="MAX">
+        </div>
+      </div>
+    </div>
+
+    <div class="speed-row">
+      <span class="speed-label">СКОРОСТЬ</span>
+      <input type="range" id="speed" min="200" max="3000" value="1000" step="100">
+      <span class="speed-val" id="speedVal">1.0 с</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="startGen()">▶ ЗАПУСК</button>
+      <button class="btn btn-stop"    onclick="stopGen()">■ СТОП</button>
+      <button class="btn btn-primary" onclick="genOnce()" style="flex:0.6">↻ РАЗ</button>
+    </div>
+  </div>
+
+  <!-- Output Panel -->
+  <div class="panel">
+    <div class="panel-title">ТЕКУЩИЙ SEED (SHA3-256 + HMAC)</div>
+    <div class="seed-display" id="seedDisplay">— ожидание генерации —</div>
+
+    <div class="value-big" id="valueBig">—</div>
+
+    <div class="meta-grid">
+      <div class="meta-item"><div class="meta-key">АЛГОРИТМ</div>     <div class="meta-val" id="mAlg">—</div></div>
+      <div class="meta-item"><div class="meta-key">БИТЫ ЭНТРОПИИ</div><div class="meta-val" id="mBits">—</div></div>
+      <div class="meta-item"><div class="meta-key">РАСПРЕДЕЛЕНИЕ</div><div class="meta-val" id="mDist">—</div></div>
+      <div class="meta-item"><div class="meta-key">ДИАПАЗОН</div>     <div class="meta-val" id="mRange">—</div></div>
+    </div>
+  </div>
+
+  <!-- History Panel -->
+  <div class="panel">
+    <div class="panel-title">ИСТОРИЯ ГЕНЕРАЦИИ</div>
+    <div class="history-list" id="history"></div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-bar">
+    <div class="dot" id="liveDot"></div>
+    <span id="statusText">ОСТАНОВЛЕН</span>
+    &nbsp;|&nbsp; СГЕНЕРИРОВАНО: <span class="counter" id="counter">0</span>
+  </div>
+
+</div>
+
+<script>
+  let timer = null;
+  let count = 0;
+  const MAX_HISTORY = 30;
+
+  const $ = id => document.getElementById(id);
+
+  // Speed slider
+  $('speed').addEventListener('input', () => {
+    const ms = +$('speed').value;
+    $('speedVal').textContent = (ms/1000).toFixed(1) + ' с';
+    if (timer) { stopGen(); startGen(); }
+  });
+
+  async function generate() {
+    const dist  = $('dist').value;
+    const low   = parseFloat($('low').value)  || 0;
+    const high  = parseFloat($('high').value) || 1;
+
+    try {
+      const res  = await fetch(`/generate?dist=${dist}&low=${low}&high=${high}`);
+      const data = await res.json();
+      updateUI(data);
+    } catch(e) {
+      $('seedDisplay').textContent = 'Ошибка: сервер недоступен. Запустите rng_server.py';
+    }
+  }
+
+  function updateUI(d) {
+    count++;
+    $('counter').textContent = count;
+
+    // Animated seed display — полный сид
+    const full = d.seed;
+    const disp = full.slice(0,16) + ' ' + full.slice(16,32) + ' ' + full.slice(32,48) + ' ' + full.slice(48,64);
+    animateSeed(disp);
+
+    // Big value
+    const v = d.distribution === 'integer'
+      ? Math.round(d.value).toString()
+      : d.value.toFixed(8);
+    $('valueBig').textContent = v;
+
+    // Meta
+    $('mAlg').textContent   = d.algorithm;
+    $('mBits').textContent  = d.entropy_bits + ' bit';
+    $('mDist').textContent  = d.distribution;
+    $('mRange').textContent = `[${d.low}, ${d.high}]`;
+
+    // History
+    addHistory(count, v, d.distribution, d.seed);
+  }
+
+  function animateSeed(text) {
+    const el = $('seedDisplay');
+    el.innerHTML = '';
+    [...text].forEach((ch, i) => {
+      const span = document.createElement('span');
+      span.className = 'seed-char new';
+      span.textContent = ch;
+      setTimeout(() => span.classList.remove('new'), 400 + i * 5);
+      el.appendChild(span);
+    });
+  }
+
+  function addHistory(n, val, dist, seed) {
+    const list = $('history');
+    const item = document.createElement('div');
+    item.className = 'hist-item';
+    item.innerHTML = `
+      <span class="hist-n">#${n}</span>
+      <span class="hist-val">${val}</span>
+      <span class="hist-dist">${dist}</span>
+      <span class="hist-seed">${seed}</span>
+    `;
+    list.insertBefore(item, list.firstChild);
+    while (list.children.length > MAX_HISTORY) list.removeChild(list.lastChild);
+  }
+
+  function startGen() {
+    if (timer) return;
+    const ms = +$('speed').value;
+    generate();
+    timer = setInterval(generate, ms);
+    $('liveDot').classList.add('live');
+    $('statusText').textContent = 'ГЕНЕРАЦИЯ...';
+  }
+
+  function stopGen() {
+    clearInterval(timer);
+    timer = null;
+    $('liveDot').classList.remove('live');
+    $('statusText').textContent = 'ОСТАНОВЛЕН';
+  }
+
+  function genOnce() {
+    stopGen();
+    generate();
+  }
+</script>
+</body>
+</html>
