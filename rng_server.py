@@ -89,7 +89,7 @@ def generate_value(seed_int: int, distr: str, low: float, high: float) -> float:
 
 @app.route("/")
 def index():
-    return send_from_directory(".", "claude.html")
+    return send_from_directory(".", "index.html")
 
 
 @app.route("/app.js")
