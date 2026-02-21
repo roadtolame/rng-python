@@ -51,7 +51,7 @@ def genseed(distr: str = "uniform", low: float = 0, high: float = 1):
         "seed_short": seed_hex[:16] + "..." + seed_hex[-8:],
         "algorithm": "SHA3-256 ^ HMAC-SHA3-256",
         "entropy_bits": 256,
-        "distr": distr,
+        "distribution": distr,
         "low": low,
         "high": high,
         "value": value,
