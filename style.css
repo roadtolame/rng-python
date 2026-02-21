@@ -8,7 +8,7 @@
 
 :root {
   --bg: #0e0e0e;
-  --surface: rgba(255,255,255,0.03);
+  --surface: rgba(255,255,255,0.02);
   --surface-hover: rgba(255,255,255,0.06);
   --border: rgba(255,255,255,0.08);
   --border-active: rgba(255,255,255,0.2);
@@ -62,9 +62,9 @@ body {
 
 .header h1 {
   font-family: "Syne", sans-serif;
-  font-size: clamp(26px, 5vw, 40px);
+  font-size: clamp(25px, 5vw, 40px);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--accent);
 }
 
@@ -77,13 +77,12 @@ body {
 
 /* ─── Panels ─── */
 .panel {
-  width: 100%;
+  max-width: 800px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 4px;
   padding: 22px 24px;
   backdrop-filter: blur(20px) saturate(0.8);
-  -webkit-backdrop-filter: blur(20px) saturate(0.8);
 }
 
 .panel-title {
@@ -163,14 +162,6 @@ input[type="number"],
 /* Hide number input spinners */
 input[type="number"] {
   appearance: textfield;
-  -webkit-appearance: textfield;
-  -moz-appearance: textfield;
-}
-
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
 }
 
 .dist-trigger:focus-visible,
@@ -179,10 +170,6 @@ input:focus {
   background: rgba(255,255,255,0.06);
 }
 
-.invalid-field {
-  border-color: rgba(255,100,100,0.45) !important;
-  background: rgba(255,100,100,0.06) !important;
-}
 
 .dist-control {
   position: relative;
@@ -221,11 +208,6 @@ input:focus {
   transition: background 0.15s, color 0.15s;
 }
 
-.dist-option:hover,
-.dist-option.is-active {
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.96);
-}
 
 .dist-option.is-selected {
   background: rgba(255,255,255,0.05);
@@ -371,7 +353,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
   cursor: pointer;
   transition: all 0.2s;
   text-transform: uppercase;
-  backdrop-filter: blur(10px);
 }
 
 .btn-once {
@@ -396,11 +377,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
   background: rgba(255,255,255,0.02);
 }
 
-.btn:disabled:hover {
-  border-color: rgba(255,255,255,0.05);
-  color: var(--text-muted);
-  background: rgba(255,255,255,0.02);
-}
 
 .btn-stop {
   border-color: rgba(255,255,255,0.06);
