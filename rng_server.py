@@ -1,11 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 
-import secrets
-import hashlib
-import hmac
-import os
-import time
-import math
+import secrets, hashlib, hmac, os, time, math
 
 app = Flask(__name__)
 
@@ -31,7 +26,7 @@ def genseed(distr: str = "uniform", low: float = 0, high: float = 1):
 
     # HMAC-SHA3
     key = secrets.token_bytes(32)
-    hmac_ = hmac.new(key, combined, hashlib.sha3_256).hexdigest()
+    hmac_ = hmac.new(key, combined, hashlib.sha3_256).hexdigest()  
 
     # xor with entropiya raw == sha3-256 entropiya 064x - 64x hex = 256 bit, h_mac == resul'tat sha3-256 + (randomkey, entropiya) 256 bit;
     seed_int = int(raw, 16) ^ int(hmac_, 16) #perevod v ogromnuyou stroku = 1234... 16 chisel;
