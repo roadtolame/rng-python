@@ -94,6 +94,11 @@
 
       <div class="panel">
         <div class="panel-title">Сид</div>
+          <div class="ctrl-group" style="margin-bottom: 16px;">
+            <label>Пользовательский сид</label>
+            <input type="text" id="userSeed" placeholder="Оставьте пустым или введите любой текст (my-seed-2026)" />
+            <small style="font-size:9px;color:var(--text-muted);display:block;margin-top:4px;">Общая композиция при пользовательском сиде очень близкая</small>
+          </div>
 
         <div class="seed-display" id="seedDisplay">— ожидание генерации —</div>
 
@@ -131,7 +136,39 @@
       </div>
     </div>
 
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-col">
+          <div class="footer-title">Методология и источники</div>
+          <ul class="footer-list">
+            <li>FIPS PUB 202 (SHA-3 Standard)</li>
+            <li>RFC 6234 (HMAC & SHA)</li>
+            <li>Web Crypto API Specification</li>
+            <li>Entropy Assessment (Shannon)</li>
+            <li>CSPRNG Design Patterns</li>
+          </ul>
+        </div>
+
+        <div class="footer-col footer-center">
+          <div class="copyright">
+            <bl>© 2026 Команда <br>
+            <bl></bl><span class="brand">Escape from Python</span></bl>
+            <div class="all-rights">Все права защищены</div>
+          </div>
+        </div>
+
+        <div class="footer-col footer-team">
+          <div class="footer-title">Наша команда</div>
+          <ul class="footer-list">
+            <li><strong>Гуцул Владислав</strong> — Teamlead, Backend</li>
+            <li><strong>Базилевский Андрей</strong> — Backend</li>
+            <li><strong>Звонарев Максим</strong> — Frontend, Backend</li>
+            <li><strong>Немцев Даниил</strong> — Оратор, рассказчик</li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+
     <script src="app.js"></script>
   </body>
 </html>
- 

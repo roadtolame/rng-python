@@ -32,6 +32,7 @@ async function generate() {
   const dist = $("dist").value;
   const low = parseFloat($("low").value);
   const high = parseFloat($("high").value);
+  const userSeed = $("userSeed") ? $("userSeed").value.trim() : "";
 
   showMessage("");
 
@@ -46,8 +47,13 @@ async function generate() {
     return false;
   }
 
+  let url = `/generate?dist=${dist}&low=${low}&high=${high}`;
+  if (userSeed) {
+    url += `&user_seed=${encodeURIComponent(userSeed)}`;   // ← user_seed
+  }
+
   try {
-    const res = await fetch(`/generate?dist=${dist}&low=${low}&high=${high}`);
+    const res = await fetch(url);
     if (!res.ok) throw new Error("Server issue");
     const data = await res.json();
     updateUI(data);
