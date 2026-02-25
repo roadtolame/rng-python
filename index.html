@@ -94,6 +94,11 @@
 
       <div class="panel">
         <div class="panel-title">Сид</div>
+          <div class="ctrl-group" style="margin-bottom: 16px;">
+            <label>Пользовательский сид</label>
+            <input type="text" id="userSeed" placeholder="Оставьте пустым или введите любой текст (my-seed-2026)" />
+            <small style="font-size:9px;color:var(--text-muted);display:block;margin-top:4px;">Общая композиция при пользовательском сиде очень близкая</small>
+          </div>
 
         <div class="seed-display" id="seedDisplay">— ожидание генерации —</div>
 
@@ -131,7 +136,42 @@
       </div>
     </div>
 
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-col">
+          <div class="footer-title">Методология и источники</div>
+          <ul class="footer-list">
+            <li>NIST SP 800-90A Rev. 1</li>
+            <li>FIPS PUB 202 (SHA-3 Standard)</li>
+            <li>RFC 6234 (HMAC & SHA)</li>
+            <li>Web Crypto API Specification</li>
+            <li>Dieharder Statistical Test Suite</li>
+            <li>TestU01 (Crush/BigCrush)</li>
+            <li>BSI AIS 31 Standard</li>
+            <li>Entropy Assessment (Shannon)</li>
+            <li>CSPRNG Design Patterns</li>
+          </ul>
+        </div>
+
+        <div class="footer-col footer-center">
+          <div class="copyright">
+            © 2026 Компания <span class="brand">Escape from Python</span>
+            <div class="all-rights">Все права защищены</div>
+          </div>
+        </div>
+
+        <div class="footer-col footer-team">
+          <div class="footer-title">Наша команда</div>
+          <ul class="footer-list">
+            <li><strong>Алексей Соколов</strong> — Lead Developer</li>
+            <li><strong>Мария Вольт</strong> — Crypto Analyst</li>
+            <li><strong>Иван Хакер</strong> — Security Auditor</li>
+            <li><strong>Анна Дизайн</strong> — UI/UX Specialist</li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+
     <script src="app.js"></script>
   </body>
 </html>
- 
