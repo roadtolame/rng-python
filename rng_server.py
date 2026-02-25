@@ -14,7 +14,12 @@ def _entropy():
     }
 
 #generator of seed;
-def genseed(distr: str = "uniform", low: float = 0, high: float = 1):
+def polzovatelskiy_seed(user_seed = None): 
+    if user_seed and str(user_seed).strip():
+        return int.from_bytes(hashlib.sha3_256(str(user_seed).encode('utf-8')).digest(), 'big')
+    return None
+
+def genseed(distr: str = "uniform", low: float = 0, high: float = 1, user_seed = None):
     """
     Keccak + SHA3 + HMAC with XOR
     """
@@ -30,8 +35,12 @@ def genseed(distr: str = "uniform", low: float = 0, high: float = 1):
 
     # xor with entropiya raw == sha3-256 entropiya 064x - 64x hex = 256 bit, h_mac == resul'tat sha3-256 + (randomkey, entropiya) 256 bit;
     seed_int = int(raw, 16) ^ int(hmac_, 16) #perevod v ogromnuyou stroku = 1234... 16 chisel;
+    
+    if user_seed and str(user_seed).strip():
+        seed_int = polzovatelskiy_seed(user_seed)
+    
     seed_hex = format(seed_int & ((1 << 256) - 1), "064x") #<< 1 << 256) - 1 bit = maska 64x hex;
- 
+    
     value = generate_value(seed_int, distr, low, high) # vizivaem seed_int i delaem chislo u v diapazone [0,1]; distr - forma razpredeleniya; [0,1] == [low,high] v raspredelenii;
 
     print(f"[RNG] dist={distr:8s} | seed={seed_hex[:16]}... | value={value:.6f}") # logs; seed(16x symbol) + chislo posle zapyatoy(6x symbol);
@@ -100,13 +109,14 @@ def style_css():
 @app.route("/generate")
 def generate():
     dist = request.args.get("dist", "uniform")
+    user_seed = request.args.get("user_seed")
     try:
         low = float(request.args.get("low", 0))
         high = float(request.args.get("high", 1))
     except ValueError:
         return jsonify({"error": "Invalid low/high values"}), 400
 
-    result = genseed(dist, low, high)
+    result = genseed(dist, low, high, user_seed)
 
     return jsonify(result)
 
