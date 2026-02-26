@@ -31,6 +31,11 @@
     </svg>
 
     <div class="content">
+      <nav class="top-nav" aria-label="Главная навигация">
+        <a class="top-nav-link is-active" href="/">RNG</a>
+        <a class="top-nav-link" href="/provably-fair">Provably Fair</a>
+      </nav>
+
       <div class="header">
         <h1>Криптографический ГСЧ</h1>
         <div class="sub">Генератор случайных значений на криптографическом сиде</div>
@@ -127,6 +132,21 @@
       <div class="panel">
         <div class="panel-title">История генерации</div>
         <div class="history-list" id="history"></div>
+      </div>
+
+      <div class="hist-modal" id="histModal" hidden>
+        <div class="hist-modal-backdrop" id="histModalBackdrop"></div>
+        <div class="hist-modal-window" role="dialog" aria-modal="true" aria-labelledby="histModalTitle">
+          <div class="hist-modal-head">
+            <div class="hist-modal-title" id="histModalTitle">Детали генерации</div>
+            <button type="button" class="hist-modal-close" id="histModalClose" aria-label="Закрыть">×</button>
+          </div>
+          <div class="hist-modal-body" id="histModalBody"></div>
+          <div class="hist-modal-actions">
+            <a class="btn" id="histModalToPf" href="/provably-fair">В Provably Fair</a>
+            <button type="button" class="btn btn-stop" id="histModalCloseBtn">Закрыть</button>
+          </div>
+        </div>
       </div>
 
       <div class="status-bar">

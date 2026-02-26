@@ -1,8 +1,9 @@
 from flask import Flask, request, jsonify, send_from_directory
 
-import secrets, hashlib, hmac, os, time, math
+import secrets, hashlib, hmac, os, time, math, re
 
 app = Flask(__name__)
+ALLOWED_DISTRIBUTIONS = {"uniform", "normal", "exponential", "integer"}
 
 
 def _entropy():
@@ -91,6 +92,69 @@ def generate_value(seed_int: int, distr: str, low: float, high: float) -> float:
     return u 
 
 
+def build_value_proof(seed_int: int, distr: str, low: float, high: float, value: float):
+    u = (seed_int % (2**53)) / (2**53)
+    u2_raw = hashlib.sha3_256(seed_int.to_bytes(32, "big")).digest()
+    u2 = int.from_bytes(u2_raw[:7], "big") / (2**56)
+
+    steps = {}
+    if distr == "uniform":
+        span = high - low
+        raw = low + u * span
+        steps = {
+            "span": span,
+            "raw": raw,
+        }
+    elif distr == "normal":
+        u_safe = u if u > 0 else 1e-10
+        z = math.sqrt(-2 * math.log(u_safe)) * math.cos(2 * math.pi * u2)
+        mu = (low + high) / 2
+        sigma = (high - low) / 6
+        raw_unclamped = mu + sigma * z
+        clamped = max(low, min(high, raw_unclamped))
+        steps = {
+            "u_safe": u_safe,
+            "z": z,
+            "mu": mu,
+            "sigma": sigma,
+            "raw_unclamped": raw_unclamped,
+            "clamped": clamped,
+        }
+    elif distr == "exponential":
+        u_safe = u if u > 0 else 1e-10
+        lam = 1.0
+        exp_component = -math.log(1 - u_safe) / lam
+        scaled = low + exp_component * (high - low) / 5
+        steps = {
+            "u_safe": u_safe,
+            "lambda": lam,
+            "exp_component": exp_component,
+            "scaled": scaled,
+        }
+    elif distr == "integer":
+        raw_n = low + u * (high - low + 1)
+        n_floor = int(raw_n)
+        n_clamped = min(int(high), n_floor)
+        steps = {
+            "raw_n": raw_n,
+            "n_floor": n_floor,
+            "n_clamped": n_clamped,
+        }
+
+    return {
+        "seed_int_dec": str(seed_int),
+        "seed_int_hex": format(seed_int & ((1 << 256) - 1), "064x"),
+        "u": u,
+        "u2": u2,
+        "range_check": {
+            "low": low,
+            "high": high,
+            "within_range": (low <= value <= high),
+        },
+        "distribution_steps": steps,
+    }
+
+
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
@@ -99,6 +163,16 @@ def index():
 @app.route("/app.js")
 def app_js():
     return send_from_directory(".", "app.js")
+
+
+@app.route("/provably-fair")
+def provably_fair():
+    return send_from_directory(".", "provably_fair.html")
+
+
+@app.route("/provably_fair.js")
+def provably_fair_js():
+    return send_from_directory(".", "provably_fair.js")
 
 
 @app.route("/style.css")
@@ -119,6 +193,43 @@ def generate():
     result = genseed(dist, low, high, user_seed)
 
     return jsonify(result)
+
+@app.route("/verify-rng")
+def verify_rng():
+    seed_hex = str(request.args.get("seed", "")).strip().lower()
+    dist = str(request.args.get("dist", "")).strip()
+
+    if not re.fullmatch(r"[0-9a-f]{64}", seed_hex):
+        return jsonify({"error": "Invalid seed: expected 64 hex characters"}), 400
+
+    if dist not in ALLOWED_DISTRIBUTIONS:
+        return jsonify({"error": "Invalid distribution"}), 400
+
+    try:
+        low = float(request.args.get("low", ""))
+        high = float(request.args.get("high", ""))
+    except ValueError:
+        return jsonify({"error": "Invalid low/high values"}), 400
+
+    if low > high:
+        return jsonify({"error": "Invalid range: low must be <= high"}), 400
+
+    seed_int = int(seed_hex, 16)
+    value = generate_value(seed_int, dist, low, high)
+    display_value = str(int(value)) if dist == "integer" else f"{value:.8f}"
+    proof = build_value_proof(seed_int, dist, low, high, value)
+
+    return jsonify(
+        {
+            "seed": seed_hex,
+            "distribution": dist,
+            "low": low,
+            "high": high,
+            "value": value,
+            "display_value": display_value,
+            "proof": proof,
+        }
+    )
 
 
 if __name__ == "__main__":
