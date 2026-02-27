@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CryptoRNG — Provably Fair</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <svg class="svg-bg" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="100%" height="100%" preserveAspectRatio="none">
+      <defs>
+        <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.03)" />
+          <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+        </radialGradient>
+        <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stop-color="rgba(255,255,255,0)" />
+          <stop offset="50%" stop-color="rgba(255,255,255,0.06)" />
+          <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+        </linearGradient>
+      </defs>
+      <rect width="100%" height="100%" fill="#0e0e0e" />
+      <ellipse cx="50%" cy="50%" rx="38%" ry="32%" fill="url(#centerGlow)" />
+      <line x1="0" y1="33%" x2="100%" y2="33%" stroke="url(#lineGrad)" stroke-width="1">
+        <animate attributeName="opacity" values="0.3;0.7;0.3" dur="7s" repeatCount="indefinite" />
+      </line>
+      <line x1="0" y1="66%" x2="100%" y2="66%" stroke="url(#lineGrad)" stroke-width="1">
+        <animate attributeName="opacity" values="0.6;0.2;0.6" dur="9s" repeatCount="indefinite" />
+      </line>
+    </svg>
+
+    <div class="content">
+      <nav class="top-nav" aria-label="Главная навигация">
+        <a class="top-nav-link" href="/">RNG</a>
+        <a class="top-nav-link is-active" href="/provably-fair">Provably Fair</a>
+      </nav>
+
+      <div class="header">
+        <h1>Provably Fair</h1>
+        <div class="sub">Доказательство результата RNG из истории генерации</div>
+      </div>
+
+      <div class="panel" id="pfImportedBox" hidden>
+        <div class="panel-title">Импорт из RNG</div>
+        <div class="pf-imported-grid" id="pfImportedData"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">RNG Verifier</div>
+        <div class="controls pf-controls">
+          <div class="ctrl-group">
+            <label for="rngvSeed">Seed (hex)</label>
+            <input class="text-input" type="text" id="rngvSeed" placeholder="64-hex seed" />
+          </div>
+          <div class="ctrl-group">
+            <label for="rngvDist">Распределение</label>
+            <select id="rngvDist">
+              <option value="uniform">uniform</option>
+              <option value="normal">normal</option>
+              <option value="exponential">exponential</option>
+              <option value="integer">integer</option>
+            </select>
+          </div>
+        </div>
+        <div class="controls pf-controls">
+          <div class="ctrl-group">
+            <label for="rngvLow">Low</label>
+            <input type="number" id="rngvLow" step="any" placeholder="low" />
+          </div>
+          <div class="ctrl-group">
+            <label for="rngvHigh">High</label>
+            <input type="number" id="rngvHigh" step="any" placeholder="high" />
+          </div>
+        </div>
+        <div class="controls pf-controls">
+          <div class="ctrl-group">
+            <label for="rngvExpected">Expected raw value</label>
+            <input type="number" id="rngvExpected" step="any" placeholder="value из истории RNG" />
+          </div>
+          <div class="ctrl-group">
+            <label for="rngvNonce">Nonce (derived)</label>
+            <input type="number" id="rngvNonce" step="1" readonly />
+          </div>
+        </div>
+        <div class="btn-row pf-btn-row">
+          <button type="button" id="rngvRun" class="btn">Проверить RNG</button>
+        </div>
+        <div class="pf-output" id="rngvComputedRaw">Computed raw: —</div>
+        <div class="pf-output" id="rngvComputedDisplay">Computed display: —</div>
+        <div class="pf-result" id="rngvStatus">Ожидает ручной проверки.</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Пошаговое доказательство</div>
+        <div class="pf-proof-note">Показываются промежуточные шаги вычисления RNG для выбранного сида и параметров.</div>
+        <div class="pf-proof-block">
+          <div class="pf-proof-title">Базовые параметры</div>
+          <div class="pf-proof-grid" id="rngProofBase"></div>
+        </div>
+        <div class="pf-proof-block">
+          <div class="pf-proof-title">Проверка диапазона</div>
+          <div class="pf-proof-grid" id="rngProofRange"></div>
+        </div>
+        <div class="pf-proof-block">
+          <div class="pf-proof-title">Шаги распределения</div>
+          <div class="pf-proof-grid" id="rngProofDist"></div>
+        </div>
+      </div>
+
+      <div class="ui-message" id="pfMessage" aria-live="polite"></div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-col">
+          <div class="footer-title">Методология и источники</div>
+          <ul class="footer-list">
+            <li>FIPS PUB 202 (SHA-3 Standard)</li>
+            <li>CSPRNG Design Patterns</li>
+            <li>Web Crypto API Specification</li>
+            <li>Deterministic Replay (seed-based)</li>
+            <li>Range-Constrained Sampling</li>
+          </ul>
+        </div>
+
+        <div class="footer-col footer-center">
+          <div class="copyright">
+            <bl>© 2026 Команда <br />
+            <bl></bl><span class="brand">Escape from Python</span></bl>
+            <div class="all-rights">Все права защищены</div>
+          </div>
+        </div>
+
+        <div class="footer-col footer-team">
+          <div class="footer-title">Наша команда</div>
+          <ul class="footer-list">
+            <li><strong>Гуцул Владислав</strong> — Teamlead, Backend</li>
+            <li><strong>Базилевский Андрей</strong> — Backend</li>
+            <li><strong>Звонарев Максим</strong> — Frontend, Backend</li>
+            <li><strong>Немцев Даниил</strong> — Оратор, рассказчик</li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+
+    <script src="provably_fair.js"></script>
+  </body>
+</html>
